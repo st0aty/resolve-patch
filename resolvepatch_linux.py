@@ -153,17 +153,20 @@ PATCHES_LINUX_21_1 = [
 # ------------------------------------------------------------------ version detection
 
 def detect_version(data: bytes) -> tuple:
-    """Extract version from null-delimited build string (e.g. '\x0021.0.0b.0028\x00')."""
-    m = re.search(rb"\x00(\d+)\.(\d+)\.(\d+)b\.\d+\x00", data)
+    """Extract version from null-delimited build string (e.g. '\x0021.0.0b.0028\x00' or '\x0021.1.1.0010\x00')."""
+    m = re.search(rb"\x00(\d+)\.(\d+)\.(\d+)(?:b\.)?\.(\d+)\x00", data)
     if m:
         return int(m.group(1)), int(m.group(2)), int(m.group(3))
     return (0, 0, 0)
 
 
 def select_patches(version: tuple) -> list:
-    major = version[0]
+    major, minor = version[0], version[1]
     if major == 21:
-        return PATCHES_LINUX_21
+        if minor == 0:
+            return PATCHES_LINUX_21_0
+        if minor >= 1:
+            return PATCHES_LINUX_21_1
     raise PatchError(
         f"Resolve {version[0]}.{version[1]}.{version[2]} is not supported. "
         "Only v21.x is currently supported by this Linux patcher."
